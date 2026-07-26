@@ -6,19 +6,29 @@ import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { ref, watch, computed } from 'vue'
 
-// Polyfill legacy .ready() method on adapter prototypes
+// Polyfill legacy .adapter property and .ready() method on adapter prototypes
 ;[PhantomWalletAdapter, SolflareWalletAdapter].forEach((AdapterClass: any) => {
-  if (AdapterClass && AdapterClass.prototype && typeof AdapterClass.prototype.ready !== 'function') {
-    AdapterClass.prototype.ready = async function () {
-      return (
-        this.readyState === WalletReadyState.Installed ||
-        this.readyState === 'Installed' ||
-        this.readyState === WalletReadyState.Loadable ||
-        this.readyState === 'Loadable' ||
-        !!(window as any).solana ||
-        !!(window as any).phantom ||
-        !!(window as any).solflare
-      )
+  if (AdapterClass && AdapterClass.prototype) {
+    if (!('adapter' in AdapterClass.prototype)) {
+      Object.defineProperty(AdapterClass.prototype, 'adapter', {
+        get() {
+          return this
+        },
+        configurable: true,
+      })
+    }
+    if (typeof AdapterClass.prototype.ready !== 'function') {
+      AdapterClass.prototype.ready = async function () {
+        return (
+          this.readyState === WalletReadyState.Installed ||
+          this.readyState === 'Installed' ||
+          this.readyState === WalletReadyState.Loadable ||
+          this.readyState === 'Loadable' ||
+          !!(window as any).solana ||
+          !!(window as any).phantom ||
+          !!(window as any).solflare
+        )
+      }
     }
   }
 })
