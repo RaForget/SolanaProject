@@ -52,7 +52,7 @@ const wallets = [
 ]
 
 // Wallet composables
-const { publicKey, connected, sendTransaction } = useWallet()
+const { publicKey, connected, sendTransaction, wallet } = useWallet()
 
 // Reactive States
 const balance = ref<number | null>(null)
@@ -137,9 +137,19 @@ const handleCheckout = async () => {
     transaction.recentBlockhash = blockhash
     transaction.feePayer = publicKey.value
 
-    // 4. Send and request signature (preflight simulation enabled to ensure RPC node broadcasts packet)
-    const signature = await sendTransaction(transaction, connection, { skipPreflight: false })
-    console.log('Transaction sent. Signature:', signature)
+    // 4. Request wallet signature and broadcast directly via QuickNode Devnet
+    let signature: string
+    const adapter = wallet.value?.adapter as any
+    if (adapter && typeof adapter.signTransaction === 'function') {
+      const signedTx = await adapter.signTransaction(transaction)
+      signature = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      })
+    } else {
+      signature = await sendTransaction(transaction, connection, { skipPreflight: false })
+    }
+    console.log('Transaction broadcasted directly to QuickNode Devnet. Signature:', signature)
 
     statusStepMessage.value = 'Processando na Solana Devnet...'
 
