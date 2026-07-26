@@ -143,46 +143,40 @@ const handleCheckout = async () => {
 
     statusStepMessage.value = 'Processando na Solana Devnet...'
 
-    // 5. WebSocket + 2s Polling Confirmation (No HTTP fetch spamming)
+    // 5. Clean, reliable QuickNode polling (no WSS ping errors, no 133ms fetch spam)
     let confirmed = false
-    let subId: number | null = null
+    const startTime = Date.now()
+    const timeoutMs = 30000 // 30 seconds max poll
 
-    try {
-      subId = connection.onSignature(
-        signature,
-        (result) => {
-          if (!result.err) {
-            confirmed = true
-          }
-        },
-        'confirmed'
-      )
-
-      const startTime = Date.now()
-      while (!confirmed && Date.now() - startTime < 30000) {
-        await new Promise((r) => setTimeout(r, 2000))
+    while (Date.now() - startTime < timeoutMs) {
+      await new Promise((r) => setTimeout(r, 2000))
+      try {
         const status = await connection.getSignatureStatus(signature)
-        if (
-          status &&
-          status.value &&
-          (status.value.confirmationStatus === 'confirmed' ||
+        if (status && status.value) {
+          if (status.value.err) {
+            throw new Error(`Erro na transação on-chain: ${JSON.stringify(status.value.err)}`)
+          }
+          if (
+            status.value.confirmationStatus === 'confirmed' ||
             status.value.confirmationStatus === 'finalized' ||
-            (!status.value.err && status.value.slot > 0))
-        ) {
-          confirmed = true
-          break
+            (!status.value.err && status.value.slot > 0)
+          ) {
+            confirmed = true
+            break
+          }
         }
-      }
-    } finally {
-      if (subId !== null) {
-        try {
-          connection.removeSignatureListener(subId)
-        } catch (e) {}
+      } catch (err: any) {
+        if (err.message && err.message.includes('on-chain')) throw err
       }
     }
 
     if (!confirmed) {
-      throw new Error('A confirmação excedeu o tempo limite. Verifique no Solana Explorer.')
+      const finalStatus = await connection.getSignatureStatus(signature)
+      if (finalStatus && finalStatus.value && !finalStatus.value.err) {
+        confirmed = true
+      } else {
+        throw new Error('A confirmação excedeu o tempo limite. Verifique no Solana Explorer.')
+      }
     }
 
     txSignature.value = signature
