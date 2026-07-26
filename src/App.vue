@@ -135,28 +135,35 @@ const handleCheckout = async () => {
     transaction.recentBlockhash = blockhash
     transaction.feePayer = publicKey.value
 
-    // 4. Send and request signature
-    const signature = await sendTransaction(transaction, connection, { skipPreflight: false })
+    // 4. Send and request signature (skipPreflight: true for fast broadcast on Devnet)
+    const signature = await sendTransaction(transaction, connection, { skipPreflight: true })
     console.log('Transaction sent. Signature:', signature)
 
-    // 5. Confirm Transaction with status fallback for public Devnet node polling
-    try {
-      const confirmation = await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      }, 'confirmed')
+    // 5. Custom polling loop for Devnet confirmation (resilient against public RPC blockheight lag)
+    let confirmed = false
+    const startTime = Date.now()
+    const timeoutMs = 45000 // 45 seconds max poll
 
-      if (confirmation.value.err) {
-        throw new Error('Falha na confirmação da transação na rede.')
-      }
-    } catch (confirmErr: any) {
-      console.warn('Confirm strategy timeout, checking signature status directly...', confirmErr)
+    while (Date.now() - startTime < timeoutMs) {
       const status = await connection.getSignatureStatus(signature)
-      const isConfirmed = status.value && (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized' || !status.value.err)
-      
-      if (!isConfirmed) {
-        throw confirmErr
+      if (status && status.value) {
+        if (status.value.err) {
+          throw new Error(`Erro na transação on-chain: ${JSON.stringify(status.value.err)}`)
+        }
+        if (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized') {
+          confirmed = true
+          break
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+    }
+
+    if (!confirmed) {
+      const finalStatus = await connection.getSignatureStatus(signature)
+      if (finalStatus && finalStatus.value && !finalStatus.value.err) {
+        confirmed = true
+      } else {
+        throw new Error('A confirmação da transação excedeu o tempo limite. Verifique o status no Explorer.')
       }
     }
 
