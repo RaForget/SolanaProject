@@ -163,8 +163,8 @@ const handleCheckout = async () => {
       errorMessage.value = 'Saldo insuficiente para cobrir as taxas de rede (gas/rent).'
     } else if (errMsg.includes('0x0') || errMsg.includes('Attempt to debit an account')) {
       errorMessage.value = 'Saldo insuficiente para realizar a transferência de 0.05 SOL.'
-    } else if (errMsg.includes('Blockhash not found') || errMsg.includes('blockhash')) {
-      errorMessage.value = 'A transação expirou ou a rede está instável. Por favor, tente novamente.'
+    } else if (errMsg.includes('Blockhash not found') || errMsg.includes('blockhash') || errMsg.includes('expired') || errMsg.includes('block height exceeded')) {
+      errorMessage.value = 'A transação expirou (o tempo de confirmação na carteira excedeu o limite do bloco). Por favor, clique em Confirmar e Pagar novamente.'
     } else {
       errorMessage.value = errMsg || 'Ocorreu um erro desconhecido durante a transação.'
     }
