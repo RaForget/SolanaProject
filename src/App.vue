@@ -58,6 +58,7 @@ const { publicKey, connected, sendTransaction } = useWallet()
 const balance = ref<number | null>(null)
 const isLoadingBalance = ref(false)
 const isProcessingTx = ref(false)
+const statusStepMessage = ref('Aguardando Confirmação...')
 const txSignature = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 
@@ -104,6 +105,7 @@ const handleCheckout = async () => {
   }
 
   isProcessingTx.value = true
+  statusStepMessage.value = 'Aprove na sua carteira Phantom...'
   errorMessage.value = null
   txSignature.value = null
 
@@ -138,6 +140,8 @@ const handleCheckout = async () => {
     // 4. Send and request signature (skipPreflight: true for fast broadcast on Devnet)
     const signature = await sendTransaction(transaction, connection, { skipPreflight: true })
     console.log('Transaction sent. Signature:', signature)
+
+    statusStepMessage.value = 'Processando na Solana Devnet...'
 
     // 5. Custom polling loop for Devnet confirmation (resilient against public RPC blockheight lag)
     let confirmed = false
@@ -312,7 +316,7 @@ const handleCheckout = async () => {
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               
-              <span v-if="isProcessingTx">Aguardando Confirmação...</span>
+              <span v-if="isProcessingTx">{{ statusStepMessage }}</span>
               <span v-else>Confirmar e Pagar {{ CHECKOUT_AMOUNT_SOL }} SOL</span>
             </button>
           </div>
