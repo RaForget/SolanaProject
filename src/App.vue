@@ -93,9 +93,12 @@ watch(publicKey, (newKey) => {
   }
 }, { immediate: true })
 
+// Computed connection check based on connected flag OR presence of publicKey
+const isWalletConnected = computed(() => connected.value || !!publicKey.value)
+
 // Execute Checkout Transaction
 const handleCheckout = async () => {
-  if (!publicKey.value || !connected.value) {
+  if (!publicKey.value) {
     errorMessage.value = 'Por favor, conecte sua carteira primeiro.'
     return
   }
@@ -243,7 +246,7 @@ const handleCheckout = async () => {
 
           <!-- Wallet State Information -->
           <div class="mb-6 rounded-2xl bg-slate-950/40 border border-slate-800/60 p-4">
-            <div v-if="connected" class="space-y-2">
+            <div v-if="isWalletConnected" class="space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <span class="text-slate-500 font-medium">Carteira conectada</span>
                 <span class="font-mono font-bold text-slate-300">{{ truncatedAddress }}</span>
@@ -266,7 +269,7 @@ const handleCheckout = async () => {
           <!-- Dynamic CTA Button / Status Feedback -->
           <div>
             <!-- Not Connected -->
-            <div v-if="!connected" class="w-full text-center">
+            <div v-if="!isWalletConnected" class="w-full text-center">
               <p class="text-xs text-slate-500 mb-2">Conecte sua carteira Solana no canto superior direito para prosseguir</p>
               <div class="w-full flex justify-center py-1 opacity-80 hover:opacity-100 transition-opacity">
                 <!-- Fallback multi-button triggers modal directly -->
