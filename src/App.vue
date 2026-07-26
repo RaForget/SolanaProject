@@ -33,9 +33,9 @@ import { ref, watch, computed } from 'vue'
   }
 })
 
-// Free, high-performance Ankr Solana Devnet RPC (No API key required)
-const rpcHttpUrl = 'https://rpc.ankr.com/solana_devnet'
-const rpcWsUrl = 'wss://rpc.ankr.com/solana_devnet'
+// Custom QuickNode RPC endpoints provided by hackathon organizers
+const rpcHttpUrl = 'https://polished-dry-forest.solana-devnet.quiknode.pro/c5943463eb6799a039aee8340e2028f80bcc570d/'
+const rpcWsUrl = 'wss://polished-dry-forest.solana-devnet.quiknode.pro/c5943463eb6799a039aee8340e2028f80bcc570d/'
 const connection = new Connection(rpcHttpUrl, {
   commitment: 'confirmed',
   wsEndpoint: rpcWsUrl,
