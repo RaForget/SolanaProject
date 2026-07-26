@@ -131,7 +131,7 @@ const handleCheckout = async () => {
     )
 
     // 3. Fetch latest blockhash
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash()
+    const { blockhash } = await connection.getLatestBlockhash()
     transaction.recentBlockhash = blockhash
     transaction.feePayer = publicKey.value
 
