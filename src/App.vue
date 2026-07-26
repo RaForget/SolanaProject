@@ -136,18 +136,28 @@ const handleCheckout = async () => {
     transaction.feePayer = publicKey.value
 
     // 4. Send and request signature
-    const signature = await sendTransaction(transaction, connection)
+    const signature = await sendTransaction(transaction, connection, { skipPreflight: false })
     console.log('Transaction sent. Signature:', signature)
 
-    // 5. Confirm Transaction
-    const confirmation = await connection.confirmTransaction({
-      signature,
-      blockhash,
-      lastValidBlockHeight
-    }, 'confirmed')
+    // 5. Confirm Transaction with status fallback for public Devnet node polling
+    try {
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed')
 
-    if (confirmation.value.err) {
-      throw new Error('Falha na confirmação da transação na rede.')
+      if (confirmation.value.err) {
+        throw new Error('Falha na confirmação da transação na rede.')
+      }
+    } catch (confirmErr: any) {
+      console.warn('Confirm strategy timeout, checking signature status directly...', confirmErr)
+      const status = await connection.getSignatureStatus(signature)
+      const isConfirmed = status.value && (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized' || !status.value.err)
+      
+      if (!isConfirmed) {
+        throw confirmErr
+      }
     }
 
     txSignature.value = signature
