@@ -2,8 +2,26 @@
 import { WalletMultiButton, WalletModalProvider } from '@solana/wallet-adapter-vue-ui'
 import { useWallet, WalletProvider } from '@solana/wallet-adapter-vue'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
+import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { ref, watch, computed } from 'vue'
+
+// Polyfill legacy .ready() method on adapter prototypes
+;[PhantomWalletAdapter, SolflareWalletAdapter].forEach((AdapterClass: any) => {
+  if (AdapterClass && AdapterClass.prototype && typeof AdapterClass.prototype.ready !== 'function') {
+    AdapterClass.prototype.ready = async function () {
+      return (
+        this.readyState === WalletReadyState.Installed ||
+        this.readyState === 'Installed' ||
+        this.readyState === WalletReadyState.Loadable ||
+        this.readyState === 'Loadable' ||
+        !!(window as any).solana ||
+        !!(window as any).phantom ||
+        !!(window as any).solflare
+      )
+    }
+  }
+})
 
 // Custom QuickNode RPC endpoints provided for the event
 const rpcHttpUrl = 'https://polished-dry-forest.solana-devnet.quiknode.pro/c543463b795839140e2828f0bcc57e/'
