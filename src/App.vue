@@ -33,9 +33,9 @@ import { ref, watch, computed } from 'vue'
   }
 })
 
-// High-performance Helius Devnet RPC endpoints
-const rpcHttpUrl = 'https://devnet.helius-rpc.com/?api-key=153443a0-7848-4a47-814d-12a818c30669'
-const rpcWsUrl = 'wss://devnet.helius-rpc.com/?api-key=153443a0-7848-4a47-814d-12a818c30669'
+// Free, high-performance Ankr Solana Devnet RPC (No API key required)
+const rpcHttpUrl = 'https://rpc.ankr.com/solana_devnet'
+const rpcWsUrl = 'wss://rpc.ankr.com/solana_devnet'
 const connection = new Connection(rpcHttpUrl, {
   commitment: 'confirmed',
   wsEndpoint: rpcWsUrl,
