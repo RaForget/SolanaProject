@@ -33,9 +33,9 @@ import { ref, watch, computed } from 'vue'
   }
 })
 
-// Custom QuickNode RPC endpoints provided for the event
-const rpcHttpUrl = 'https://polished-dry-forest.solana-devnet.quiknode.pro/c543463b795839140e2828f0bcc57e/'
-const rpcWsUrl = 'wss://polished-dry-forest.solana-devnet.quiknode.pro/c543463b795839140e2828f0bcc57e/'
+// Official Solana Devnet RPC endpoint
+const rpcHttpUrl = 'https://api.devnet.solana.com'
+const rpcWsUrl = 'wss://api.devnet.solana.com'
 const connection = new Connection(rpcHttpUrl, {
   commitment: 'confirmed',
   wsEndpoint: rpcWsUrl,
