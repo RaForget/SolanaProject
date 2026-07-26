@@ -83,12 +83,20 @@ const fetchBalance = async (pubKey: PublicKey) => {
   }
 }
 
-// Watch publicKey changes to update balance reactively
-watch(publicKey, (newKey) => {
-  if (newKey) {
-    fetchBalance(newKey)
-    errorMessage.value = null
-    txSignature.value = null
+// Auto-refresh balance reactively upon connection and every 4s
+let balanceInterval: any = null
+
+watch([publicKey, connected], ([newKey, isConn]) => {
+  if (balanceInterval) clearInterval(balanceInterval)
+  
+  const activeKey = newKey || publicKey.value
+  if (activeKey || isConn) {
+    if (activeKey) {
+      fetchBalance(activeKey)
+      balanceInterval = setInterval(() => {
+        if (publicKey.value) fetchBalance(publicKey.value)
+      }, 4000)
+    }
   } else {
     balance.value = null
   }
