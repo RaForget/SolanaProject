@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { WalletMultiButton, WalletModalProvider } from '@solana/wallet-adapter-vue-ui'
-import { useWallet, WalletProvider } from '@solana/wallet-adapter-vue'
+import { WalletMultiButton } from '@solana/wallet-adapter-vue-ui'
+import { useWallet } from '@solana/wallet-adapter-vue'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
@@ -44,12 +44,6 @@ const connection = new Connection(rpcHttpUrl, {
 // Hardcoded destination address (randomly generated Devnet address for checkout/donations)
 const DESTINATION_ADDRESS = 'BgG5sM8vMuxQ1r15r7ZkG2Yd6eUoMh94R3N72yL5r5c5'
 const CHECKOUT_AMOUNT_SOL = 0.05
-
-// Configure wallet adapters
-const wallets = [
-  new PhantomWalletAdapter(),
-  new SolflareWalletAdapter(),
-]
 
 // Wallet composables
 const { publicKey, connected, sendTransaction, wallet } = useWallet()
@@ -222,8 +216,6 @@ const handleCheckout = async () => {
 </script>
 
 <template>
-  <WalletProvider :wallets="wallets" auto-connect>
-    <WalletModalProvider>
     <div class="relative min-h-screen w-full overflow-hidden bg-[#0b0f19] text-[#e2e8f0] flex flex-col items-center justify-between p-6 selection:bg-[#9945FF]/30 selection:text-white">
       <!-- Background Decorative Lights -->
       <div class="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-[#9945FF]/10 blur-[120px] pointer-events-none"></div>
@@ -409,8 +401,6 @@ const handleCheckout = async () => {
         </p>
       </footer>
     </div>
-    </WalletModalProvider>
-  </WalletProvider>
 </template>
 
 <style>

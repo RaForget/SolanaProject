@@ -1,18 +1,18 @@
-import { createApp } from 'vue'
+import { createApp, h } from 'vue'
 import './style.css'
 import App from './App.vue'
 
-import { initWallet } from '@solana/wallet-adapter-vue'
+import { WalletProvider } from '@solana/wallet-adapter-vue'
+import { WalletModalProvider } from '@solana/wallet-adapter-vue-ui'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { WalletReadyState } from '@solana/wallet-adapter-base'
 
 // Import Wallet Adapter default styles from direct path
 import '../node_modules/@solana/wallet-adapter-vue-ui/styles.css'
 
-// Polyfill legacy .adapter property and .ready() method on adapter prototypes for @solana/wallet-adapter-vue (v0.4.5) compatibility
+// Polyfill legacy .adapter property and .ready() method on adapter prototypes
 ;[PhantomWalletAdapter, SolflareWalletAdapter].forEach((AdapterClass: any) => {
   if (AdapterClass && AdapterClass.prototype) {
-    // Legacy Vue adapter expects wallet.adapter to point to the adapter instance
     if (!('adapter' in AdapterClass.prototype)) {
       Object.defineProperty(AdapterClass.prototype, 'adapter', {
         get() {
@@ -21,7 +21,6 @@ import '../node_modules/@solana/wallet-adapter-vue-ui/styles.css'
         configurable: true,
       })
     }
-    // Legacy Vue adapter expects adapter.ready() method
     if (typeof AdapterClass.prototype.ready !== 'function') {
       AdapterClass.prototype.ready = async function () {
         return (
@@ -38,13 +37,19 @@ import '../node_modules/@solana/wallet-adapter-vue-ui/styles.css'
   }
 })
 
-const phantom = new PhantomWalletAdapter()
-const solflare = new SolflareWalletAdapter()
+const wallets = [
+  new PhantomWalletAdapter(),
+  new SolflareWalletAdapter(),
+]
 
-// Initialize the global wallet store
-initWallet({
-  wallets: [phantom, solflare],
-  autoConnect: true,
-})
+const RootApp = {
+  render() {
+    return h(WalletProvider, { wallets, autoConnect: true }, () => [
+      h(WalletModalProvider, null, () => [
+        h(App)
+      ])
+    ])
+  }
+}
 
-createApp(App).mount('#app')
+createApp(RootApp).mount('#app')
