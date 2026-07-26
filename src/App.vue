@@ -33,9 +33,9 @@ import { ref, watch, computed } from 'vue'
   }
 })
 
-// Official Solana Devnet RPC endpoint
-const rpcHttpUrl = 'https://api.devnet.solana.com'
-const rpcWsUrl = 'wss://api.devnet.solana.com'
+// High-performance Helius Devnet RPC endpoints
+const rpcHttpUrl = 'https://devnet.helius-rpc.com/?api-key=153443a0-7848-4a47-814d-12a818c30669'
+const rpcWsUrl = 'wss://devnet.helius-rpc.com/?api-key=153443a0-7848-4a47-814d-12a818c30669'
 const connection = new Connection(rpcHttpUrl, {
   commitment: 'confirmed',
   wsEndpoint: rpcWsUrl,
@@ -143,16 +143,46 @@ const handleCheckout = async () => {
 
     statusStepMessage.value = 'Processando na Solana Devnet...'
 
-    // 5. Confirm Transaction using fresh blockhash strategy
-    const latestBlockhash = await connection.getLatestBlockhash('confirmed')
-    const confirmation = await connection.confirmTransaction({
-      signature,
-      blockhash: latestBlockhash.blockhash,
-      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-    }, 'confirmed')
+    // 5. WebSocket + 2s Polling Confirmation (No HTTP fetch spamming)
+    let confirmed = false
+    let subId: number | null = null
 
-    if (confirmation.value.err) {
-      throw new Error(`Falha na confirmação da transação: ${JSON.stringify(confirmation.value.err)}`)
+    try {
+      subId = connection.onSignature(
+        signature,
+        (result) => {
+          if (!result.err) {
+            confirmed = true
+          }
+        },
+        'confirmed'
+      )
+
+      const startTime = Date.now()
+      while (!confirmed && Date.now() - startTime < 30000) {
+        await new Promise((r) => setTimeout(r, 2000))
+        const status = await connection.getSignatureStatus(signature)
+        if (
+          status &&
+          status.value &&
+          (status.value.confirmationStatus === 'confirmed' ||
+            status.value.confirmationStatus === 'finalized' ||
+            (!status.value.err && status.value.slot > 0))
+        ) {
+          confirmed = true
+          break
+        }
+      }
+    } finally {
+      if (subId !== null) {
+        try {
+          connection.removeSignatureListener(subId)
+        } catch (e) {}
+      }
+    }
+
+    if (!confirmed) {
+      throw new Error('A confirmação excedeu o tempo limite. Verifique no Solana Explorer.')
     }
 
     txSignature.value = signature
